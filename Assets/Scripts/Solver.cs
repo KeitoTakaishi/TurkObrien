@@ -19,8 +19,15 @@ public class Solver : MonoBehaviour
     int nA;
     float[] MatA;
 
+    
     public Mesh outerMesh;
     public Mesh innerMesh;
+    Vector<float> lambda;
+
+    //visualize
+    Mesh mesh;
+    int sN = 20;
+
 
 
 
@@ -28,6 +35,7 @@ public class Solver : MonoBehaviour
     {
         outerMesh = new Mesh();
         innerMesh = new Mesh();
+        mesh = new Mesh();
     }
     void Start()
     {
@@ -35,6 +43,7 @@ public class Solver : MonoBehaviour
         calcInnerValue();
         createMesh();
         initMatrix();
+        Visualize();
     }
 
     void Update()
@@ -159,12 +168,11 @@ public class Solver : MonoBehaviour
 
         var A = Matrix<float>.Build.DenseOfArray(m);
         var _b = Vector<float>.Build.Dense(b);
-        var x = A.Solve(_b);
+        lambda = A.Solve(_b);
 
-        for(int i =0; i < x.Count; i++)
-        {
-            Debug.Log(i.ToString() + ", " + x[i]);
-        }
+
+        //implicitSurface(x);
+        
     }
 
     private float phi(Vector3 p, Vector3 points)
@@ -174,6 +182,62 @@ public class Solver : MonoBehaviour
     }
 
 
+
+    private float implicitSurface(Vector3 sample)
+    {
+        float sum = 0.0f;
+        for (int i = 0; i < lambda.Count-4; i++)
+        {
+            //Debug.Log(i.ToString() + ", " + x[i]);
+            sum += phi(sample, pp[i]) * lambda[i];
+        }
+
+        
+        sum += lambda[lambda.Count-4] * sample.x;
+        sum += lambda[lambda.Count-3] * sample.y;
+        sum += lambda[lambda.Count-2] * sample.z;
+
+        sum += lambda[lambda.Count - 1];
+
+        return sum;
+    }
+
+
+    private void Visualize()
+    {
+        List<Vector3> vertices;
+        List<int> indecies;
+        int idx = 0;
+        vertices = new List<Vector3>();
+        indecies = new List<int>();
+        float delta = 2.0f / (float)(sN);
+        Vector3 offSet = new Vector3(-1.0f, -1.0f, -1.0f);
+        
+        for(int z = 0; z <= sN; z++)
+        {
+            for(int y = 0; y <= sN; y++)
+            {
+                for(int x = 0; x <= sN; x++)
+                {
+                    var v = new Vector3(x, y, z) * delta;
+                    v += offSet;
+
+                    var density = implicitSurface(v);
+                    if (Mathf.Abs(density) < 0.3f)
+                    {
+                        vertices.Add(v);
+                        indecies.Add(idx);
+                        idx++;
+                        
+                    }
+                }
+            }
+        }
+
+        mesh.SetVertices(vertices);
+        mesh.SetIndices(indecies, MeshTopology.Points, 0);
+        GetComponent<MeshFilter>().mesh = mesh;
+    }
 
     private void createMesh()
     {
@@ -197,8 +261,4 @@ public class Solver : MonoBehaviour
         innerMesh.SetVertices(vertices);
         innerMesh.SetIndices(indices, MeshTopology.Points, 0);
     }
-
-
-
-    
 }
