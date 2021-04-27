@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MathNet.Numerics;
+using MathNet.Numerics.LinearAlgebra;
 
 public class Solver : MonoBehaviour
 {
@@ -139,85 +141,30 @@ public class Solver : MonoBehaviour
             b[i] = 0.0f;
         }
 
-
-        //--------------------------------------------
-
-        //Preview
-        for(int i = 0; i < nA; i++)
+        //--------------------------------------------------
+        float[,] m = new float[nA, nA];
+        for(int i  = 0; i < nA; i++)
         {
-            string s = "";
-            for(int j = 0; j < nA; j++)
-            {
-                s += MatA[j + i * nA].ToString() + ", ";
-            }
-            Debug.Log(s);
-        }
-
-
-        Debug.Log("==========================================");
-        Debug.Log("Swap======================================");
-
-        
-        for (int j = 0; j < nA; j++)
-        {
-            var sIdx = j + 0 * nA;
-            var dIdx = j + 1 * nA;
-
-            var temp = MatA[dIdx];
-            MatA[dIdx] = MatA[sIdx];
-            MatA[sIdx] = temp;
-
-        }
-
-        for (int i = 0; i < nA; i++)
-        {
-            string s = "";
             for (int j = 0; j < nA; j++)
             {
-                s += MatA[j + i * nA].ToString() + ", ";
+                m[i, j] = MatA[j + i * nA];
             }
-            Debug.Log(s);
         }
 
-        Debug.Log("==========================================");
-        Debug.Log("Forward===================================");
 
 
+        Debug.Log("========================================");
+        Debug.Log("================Solve===================");
+        Debug.Log("========================================");
 
-        //前身消去
-        
-        for (int i = 0; i < nA - 1; i++)
+        var A = Matrix<float>.Build.DenseOfArray(m);
+        var _b = Vector<float>.Build.Dense(b);
+        var x = A.Solve(_b);
+
+        for(int i =0; i < x.Count; i++)
         {
-            Debug.Log("Mat-----------------------------------------");
-            for (int j = i + 1; j < nA; j++)
-            {
-                //0になる
-                var idx = i + j * nA;
-                var s = MatA[idx] / MatA[i*nA+i];
-                Debug.Log(s);
-                //for (int k = i; k < nA; k++)
-                //{
-                //    MatA[k+j*nA] -= MatA[k+i*nA] * s;
-                //}
-                //b[j] -= b[i] * s;
-                
-            }
-            Debug.Log("-----------------------------------------");
+            Debug.Log(i.ToString() + ", " + x[i]);
         }
-        
-
-        //Debug.Log("-----------------------------------------");
-        //Debug.Log("-----------------------------------------");
-
-        //for (int i = 0; i < nA; i++)
-        //{
-        //    string s = "";
-        //    for (int j = 0; j < nA; j++)
-        //    {
-        //        s += MatA[j + i * nA].ToString() + ", ";
-        //    }
-        //    Debug.Log(s);
-        //}
     }
 
     private float phi(Vector3 p, Vector3 points)
